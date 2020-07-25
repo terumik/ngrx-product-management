@@ -16,6 +16,7 @@ import { PageNotFoundComponent } from './home/page-not-found.component';
 
 /* Feature Modules */
 import { UserModule } from './user/user.module';
+import { StoreModule } from '@ngrx/store';
 
 @NgModule({
   imports: [
@@ -24,6 +25,8 @@ import { UserModule } from './user/user.module';
     HttpClientInMemoryWebApiModule.forRoot(ProductData),
     UserModule,
     AppRoutingModule,
+    StoreModule.forRoot({}, {}),
+    // ng add @ngrx/store will automatically add this line. (@reducer, @config)
   ],
   declarations: [
     AppComponent,
