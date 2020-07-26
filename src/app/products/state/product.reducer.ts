@@ -14,13 +14,15 @@ export interface ProductState {
   showProductCode: boolean;
   currentProduct: Product;
   products: Product[];
+  error: string;
 }
 
 // Set initial state
 const initialState: ProductState = {
   showProductCode: true,
   currentProduct: null,
-  products: []
+  products: [],
+  error: ''
 };
 
 // Feature Selector ('product' comes from product.module.ts)
@@ -42,10 +44,15 @@ export const getProducts = createSelector(
   state => state.products
 );
 
+export const getError = createSelector(
+  getProductFeatureState,
+  state => state.error
+);
+
 // reducer that returns ProductState
 export const productReducer = createReducer<ProductState>(
   initialState, // initial state
-  // -- REDUCER 1
+  // --
   on(ProductActions.toggleProductCode, // action
     (state): ProductState => { // below is updating the current state
       return {
@@ -53,7 +60,7 @@ export const productReducer = createReducer<ProductState>(
         showProductCode: !state.showProductCode,
       };
     }),
-  // -- REDUCER 2
+  // --
   on(ProductActions.setCurrentProduct,
     (state, action): ProductState => {
       return {
@@ -61,6 +68,7 @@ export const productReducer = createReducer<ProductState>(
         currentProduct: action.product
       };
     }),
+  // --
   on(ProductActions.initCurrentProduct,
     (state): ProductState => {
       return {
@@ -74,6 +82,7 @@ export const productReducer = createReducer<ProductState>(
         }
       };
     }),
+  // --
   on(ProductActions.clearCurrentProduct,
     (state): ProductState => {
       return {
@@ -81,5 +90,24 @@ export const productReducer = createReducer<ProductState>(
         currentProduct: null
       };
     }),
-);
+  // --
+  on(ProductActions.loadProductsSuccess,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        products: action.products,
+        error: ''
+      };
+    }),
+  // --
+  on(ProductActions.loadProductsFail,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        products: [],
+        error: action.error
+      };
+    }),
+  // --
+); // end create reducer
 
