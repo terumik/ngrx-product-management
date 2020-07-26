@@ -1,6 +1,7 @@
-import { createAction, on, createReducer, createFeatureSelector, createSelector } from '@ngrx/store';
+import { on, createReducer, createFeatureSelector, createSelector } from '@ngrx/store';
 import { Product } from '../product';
 import * as AppState from '../../state/app.state';
+import * as ProductActions from './product.actions';
 
 
 // State Interface for Lazy Loading
@@ -44,11 +45,40 @@ export const getProducts = createSelector(
 // reducer that returns ProductState
 export const productReducer = createReducer<ProductState>(
   initialState, // initial state
-  on(createAction('[Product]Toggle Product Code'), // action
+  // -- REDUCER 1
+  on(ProductActions.toggleProductCode, // action
     (state): ProductState => { // below is updating the current state
       return {
         ...state,
         showProductCode: !state.showProductCode,
+      };
+    }),
+  // -- REDUCER 2
+  on(ProductActions.setCurrentProduct,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        currentProduct: action.product
+      };
+    }),
+  on(ProductActions.initCurrentProduct,
+    (state): ProductState => {
+      return {
+        ...state,
+        currentProduct: {
+          id: 0,
+          productName: '',
+          productCode: 'NEW',
+          description: '',
+          starRating: 0
+        }
+      };
+    }),
+  on(ProductActions.clearCurrentProduct,
+    (state): ProductState => {
+      return {
+        ...state,
+        currentProduct: null
       };
     }),
 );
