@@ -12,7 +12,7 @@ export interface State extends AppState.State {
 // Interface for Slice of the State
 export interface ProductState {
   showProductCode: boolean;
-  currentProduct: Product;
+  currentProductId: number | null;
   products: Product[];
   error: string;
 }
@@ -20,7 +20,7 @@ export interface ProductState {
 // Set initial state
 const initialState: ProductState = {
   showProductCode: true,
-  currentProduct: null,
+  currentProductId: null,
   products: [],
   error: ''
 };
@@ -34,9 +34,29 @@ export const getShowProductCode = createSelector(
   state => state.showProductCode
 );
 
+export const getCurrentProductId = createSelector(
+  getProductFeatureState,
+  state => state.currentProductId
+);
+
 export const getCurrentProduct = createSelector(
   getProductFeatureState,
-  state => state.currentProduct
+  getCurrentProductId,
+  (state, currentProductId) => {
+    if (currentProductId === 0) {
+      // new product
+      return {
+        id: 0,
+        productName: '',
+        productCode: 'New',
+        description: '',
+        starRating: 0
+      };
+    } else {
+      // existing product or no product selected
+      return currentProductId ? state.products.find(p => p.id === currentProductId) : null;
+    }
+  }
 );
 
 export const getProducts = createSelector(
@@ -65,7 +85,7 @@ export const productReducer = createReducer<ProductState>(
     (state, action): ProductState => {
       return {
         ...state,
-        currentProduct: action.product
+        currentProductId: action.currentProductId
       };
     }),
   // --
@@ -73,13 +93,7 @@ export const productReducer = createReducer<ProductState>(
     (state): ProductState => {
       return {
         ...state,
-        currentProduct: {
-          id: 0,
-          productName: '',
-          productCode: 'NEW',
-          description: '',
-          starRating: 0
-        }
+        currentProductId: 0
       };
     }),
   // --
@@ -87,7 +101,7 @@ export const productReducer = createReducer<ProductState>(
     (state): ProductState => {
       return {
         ...state,
-        currentProduct: null
+        currentProductId: null
       };
     }),
   // --
@@ -109,5 +123,65 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
+  on(ProductActions.updateProductSuccess,
+    (state, action): ProductState => {
+      const updatedProducts = state.products.map(
+        item => action.product.id === item.id ? action.product : item
+      );
+      return {
+        ...state,
+        currentProductId: action.product.id,
+        products: updatedProducts,
+        error: ''
+      };
+    }
+  ),
+  // --
+  on(ProductActions.updateProductFail,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        error: action.error
+      };
+    }
+  ),
+  // --
+  on(ProductActions.createProductSuccess,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        currentProductId: action.product.id,
+        products: [...state.products, action.product],
+        error: ''
+      };
+    }
+  ),
+  // --
+  on(ProductActions.createProductFail,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        error: action.error
+      };
+    }
+  ),
+  // --
+  on(ProductActions.deleteProductSuccess, (state, action): ProductState => {
+    return {
+      ...state,
+      products: state.products.filter(product => product.id !== action.productId),
+      currentProductId: null,
+      error: ''
+    };
+  }),
+  // --
+  on(ProductActions.deleteProductFail,
+    (state, action): ProductState => {
+      return {
+        ...state,
+        error: action.error
+      };
+    }
+  ),
 ); // end create reducer
 

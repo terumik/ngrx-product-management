@@ -12,6 +12,7 @@ import * as ProductActions from '../state/product.actions';
 import { Store } from '@ngrx/store';
 import { State, getCurrentProduct } from '../state/product.reducer';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 @Component({
   selector: 'pm-product-edit',
@@ -70,7 +71,9 @@ export class ProductEditComponent implements OnInit {
     // this.sub = this.productService.selectedProductChanges$.subscribe(
     //   currentProduct => this.displayProduct(currentProduct)
     // );
-    this.product$ = this.store.select(getCurrentProduct);
+    this.product$ = this.store.select(getCurrentProduct).pipe(
+      tap(currentProduct => this.displayProduct(currentProduct))
+    );
     // .subscribe(
     //   currentProduct => this.displayProduct(currentProduct)
     // );
@@ -136,10 +139,11 @@ export class ProductEditComponent implements OnInit {
     // }
     if (product && product.id) {
       if (confirm(`Really delete the product: ${product.productName}?`)) {
-        this.productService.deleteProduct(product.id).subscribe({
-          next: () => this.store.dispatch(ProductActions.clearCurrentProduct()),
-          error: err => this.errorMessage = err
-        });
+        // this.productService.deleteProduct(product.id).subscribe({
+        //   next: () => this.store.dispatch(ProductActions.clearCurrentProduct()),
+        //   error: err => this.errorMessage = err
+        // });
+        this.store.dispatch(ProductActions.deleteProduct({productId: product.id}));
       }
     } else {
       // No need to delete, it was never saved
@@ -149,27 +153,30 @@ export class ProductEditComponent implements OnInit {
   }
 
   saveProduct(originalProduct: Product): void {
-    if (this.productForm.valid) {
-      if (this.productForm.dirty) {
-        // Copy over all of the original product properties
-        // Then copy over the values from the form
-        // This ensures values not on the form, such as the Id, are retained
-        const product = { ...originalProduct, ...this.productForm.value };
+    if (this.productForm.valid && this.productForm.dirty) {
+      // Copy over all of the original product properties
+      // Then copy over the values from the form
+      // This ensures values not on the form, such as the Id, are retained
+      const product = { ...originalProduct, ...this.productForm.value };
 
-        if (product.id === 0) {
-          this.productService.createProduct(product).subscribe({
-            // next: p => this.productService.changeSelectedProduct(p),
-            next: p => this.store.dispatch(ProductActions.setCurrentProduct({product})),
-            error: err => this.errorMessage = err
-          });
-        } else {
-          this.productService.updateProduct(product).subscribe({
-            // next: p => this.productService.changeSelectedProduct(p),
-            next: p => this.store.dispatch(ProductActions.setCurrentProduct({product})),
-            error: err => this.errorMessage = err
-          });
-        }
+      if (product.id === 0) {
+        // CREATE
+        // this.productService.createProduct(product).subscribe({
+        //   // next: p => this.productService.changeSelectedProduct(p),
+        //   next: p => this.store.dispatch(ProductActions.setCurrentProduct({ currentProductId: p.id })),
+        //   error: err => this.errorMessage = err
+        // });
+        this.store.dispatch(ProductActions.createProduct({product}));
+      } else {
+        // UPDATE
+        // this.productService.updateProduct(product).subscribe({
+        //   // next: p => this.productService.changeSelectedProduct(p),
+        //   next: p => this.store.dispatch(ProductActions.setCurrentProduct({ currentProductId: p.id })),
+        //   error: err => this.errorMessage = err
+        // });
+        this.store.dispatch(ProductActions.updateProduct({product}));
       }
+
     }
   }
 
