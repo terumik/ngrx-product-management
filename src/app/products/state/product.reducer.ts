@@ -1,13 +1,6 @@
-import { on, createReducer, createFeatureSelector, createSelector } from '@ngrx/store';
+import { on, createReducer } from '@ngrx/store';
 import { Product } from '../product';
-import * as AppState from '../../state/app.state';
-import * as ProductActions from './product.actions';
-
-
-// State Interface for Lazy Loading
-export interface State extends AppState.State {
-  products: ProductState;
-}
+import { ProductPageActions, ProductApiActions } from './actions';
 
 // Interface for Slice of the State
 export interface ProductState {
@@ -25,55 +18,11 @@ const initialState: ProductState = {
   error: ''
 };
 
-// Feature Selector ('product' comes from product.module.ts)
-const getProductFeatureState = createFeatureSelector<ProductState>('products');
-
-// Selector for getting specific property
-export const getShowProductCode = createSelector(
-  getProductFeatureState,
-  state => state.showProductCode
-);
-
-export const getCurrentProductId = createSelector(
-  getProductFeatureState,
-  state => state.currentProductId
-);
-
-export const getCurrentProduct = createSelector(
-  getProductFeatureState,
-  getCurrentProductId,
-  (state, currentProductId) => {
-    if (currentProductId === 0) {
-      // new product
-      return {
-        id: 0,
-        productName: '',
-        productCode: 'New',
-        description: '',
-        starRating: 0
-      };
-    } else {
-      // existing product or no product selected
-      return currentProductId ? state.products.find(p => p.id === currentProductId) : null;
-    }
-  }
-);
-
-export const getProducts = createSelector(
-  getProductFeatureState,
-  state => state.products
-);
-
-export const getError = createSelector(
-  getProductFeatureState,
-  state => state.error
-);
-
 // reducer that returns ProductState
 export const productReducer = createReducer<ProductState>(
   initialState, // initial state
   // --
-  on(ProductActions.toggleProductCode, // action
+  on(ProductPageActions.toggleProductCode, // action
     (state): ProductState => { // below is updating the current state
       return {
         ...state,
@@ -81,7 +30,7 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
-  on(ProductActions.setCurrentProduct,
+  on(ProductPageActions.setCurrentProduct,
     (state, action): ProductState => {
       return {
         ...state,
@@ -89,7 +38,7 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
-  on(ProductActions.initCurrentProduct,
+  on(ProductPageActions.initCurrentProduct,
     (state): ProductState => {
       return {
         ...state,
@@ -97,7 +46,7 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
-  on(ProductActions.clearCurrentProduct,
+  on(ProductPageActions.clearCurrentProduct,
     (state): ProductState => {
       return {
         ...state,
@@ -105,7 +54,7 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
-  on(ProductActions.loadProductsSuccess,
+  on(ProductApiActions.loadProductsSuccess,
     (state, action): ProductState => {
       return {
         ...state,
@@ -114,7 +63,7 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
-  on(ProductActions.loadProductsFail,
+  on(ProductApiActions.loadProductsFail,
     (state, action): ProductState => {
       return {
         ...state,
@@ -123,7 +72,7 @@ export const productReducer = createReducer<ProductState>(
       };
     }),
   // --
-  on(ProductActions.updateProductSuccess,
+  on(ProductApiActions.updateProductSuccess,
     (state, action): ProductState => {
       const updatedProducts = state.products.map(
         item => action.product.id === item.id ? action.product : item
@@ -137,7 +86,7 @@ export const productReducer = createReducer<ProductState>(
     }
   ),
   // --
-  on(ProductActions.updateProductFail,
+  on(ProductApiActions.updateProductFail,
     (state, action): ProductState => {
       return {
         ...state,
@@ -146,7 +95,7 @@ export const productReducer = createReducer<ProductState>(
     }
   ),
   // --
-  on(ProductActions.createProductSuccess,
+  on(ProductApiActions.createProductSuccess,
     (state, action): ProductState => {
       return {
         ...state,
@@ -157,7 +106,7 @@ export const productReducer = createReducer<ProductState>(
     }
   ),
   // --
-  on(ProductActions.createProductFail,
+  on(ProductApiActions.createProductFail,
     (state, action): ProductState => {
       return {
         ...state,
@@ -166,7 +115,7 @@ export const productReducer = createReducer<ProductState>(
     }
   ),
   // --
-  on(ProductActions.deleteProductSuccess, (state, action): ProductState => {
+  on(ProductApiActions.deleteProductSuccess, (state, action): ProductState => {
     return {
       ...state,
       products: state.products.filter(product => product.id !== action.productId),
@@ -175,7 +124,7 @@ export const productReducer = createReducer<ProductState>(
     };
   }),
   // --
-  on(ProductActions.deleteProductFail,
+  on(ProductApiActions.deleteProductFail,
     (state, action): ProductState => {
       return {
         ...state,
@@ -184,4 +133,3 @@ export const productReducer = createReducer<ProductState>(
     }
   ),
 ); // end create reducer
-

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 // import { Subscription } from 'rxjs';
@@ -8,34 +8,34 @@ import { ProductService } from '../product.service';
 import { GenericValidator } from '../../shared/generic-validator';
 import { NumberValidators } from '../../shared/number.validator';
 
-import * as ProductActions from '../state/product.actions';
-import { Store } from '@ngrx/store';
-import { State, getCurrentProduct } from '../state/product.reducer';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { ProductApiActions, ProductPageActions } from '../state/actions';
+import { State, Store } from '@ngrx/store';
 
 @Component({
   selector: 'pm-product-edit',
   templateUrl: './product-edit.component.html'
 })
-export class ProductEditComponent implements OnInit {
-  pageTitle = 'Product Edit';
-  errorMessage = '';
-  productForm: FormGroup;
+export class ProductEditComponent implements OnInit, OnChanges {
+  @Input() selectedProduct: Product;
+  @Input() errorMessage: string;
 
-  // product: Product | null;
-  // sub: Subscription;
+  @Output() create = new EventEmitter<Product>();
+  @Output() update = new EventEmitter<Product>();
+  @Output() delete = new EventEmitter<Product>();
+  @Output() clearCurrent = new EventEmitter<void>();
+
+  pageTitle = 'Product Edit';
+  productForm: FormGroup;
 
   // Use with the generic validation message class
   displayMessage: { [key: string]: string } = {};
   private validationMessages: { [key: string]: { [key: string]: string } };
   private genericValidator: GenericValidator;
-  product$: Observable<Product | null>;
 
   constructor(
     private fb: FormBuilder,
-    private productService: ProductService,
-    private store: Store<State>) {
+    // private store: Store
+    ) {
 
     // Defines all of the validation messages for the form.
     // These could instead be retrieved from a file or database.
@@ -67,26 +67,11 @@ export class ProductEditComponent implements OnInit {
       description: ''
     });
 
-    // Watch for changes to the currently selected product
-    // this.sub = this.productService.selectedProductChanges$.subscribe(
-    //   currentProduct => this.displayProduct(currentProduct)
-    // );
-    this.product$ = this.store.select(getCurrentProduct).pipe(
-      tap(currentProduct => this.displayProduct(currentProduct))
-    );
-    // .subscribe(
-    //   currentProduct => this.displayProduct(currentProduct)
-    // );
-
     // Watch for value changes for validation
     this.productForm.valueChanges.subscribe(
       () => this.displayMessage = this.genericValidator.processMessages(this.productForm)
     );
   }
-
-  // ngOnDestroy(): void {
-  //   this.sub.unsubscribe();
-  // }
 
   // Also validate on blur
   // Helpful if the user tabs through required fields
@@ -94,9 +79,17 @@ export class ProductEditComponent implements OnInit {
     this.displayMessage = this.genericValidator.processMessages(this.productForm);
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // patch form with value from the store
+    if (changes.selectedProduct) {
+      const product = changes.selectedProduct.currentValue as Product;
+      this.displayProduct(product);
+    }
+  }
+
   displayProduct(product: Product | null): void {
     // Set the local product property
-    // this.product = product;
+    this.selectedProduct = product;
 
     if (product) {
       // Reset the form back to pristine
@@ -126,29 +119,15 @@ export class ProductEditComponent implements OnInit {
   }
 
   deleteProduct(product: Product): void {
-    // if (product && product.id) {
-    //   if (confirm(`Really delete the product: ${product.productName}?`)) {
-    //     this.productService.deleteProduct(product.id).subscribe({
-    //       next: () => this.productService.changeSelectedProduct(null),
-    //       error: err => this.errorMessage = err
-    //     });
-    //   }
-    // } else {
-    //   // No need to delete, it was never saved
-    //   this.productService.changeSelectedProduct(null);
-    // }
     if (product && product.id) {
       if (confirm(`Really delete the product: ${product.productName}?`)) {
-        // this.productService.deleteProduct(product.id).subscribe({
-        //   next: () => this.store.dispatch(ProductActions.clearCurrentProduct()),
-        //   error: err => this.errorMessage = err
-        // });
-        this.store.dispatch(ProductActions.deleteProduct({productId: product.id}));
+        // this.store.dispatch(ProductPageActions.deleteProduct({ productId: product.id }));
+        this.delete.emit(product);
       }
     } else {
       // No need to delete, it was never saved
-      // this.productService.changeSelectedProduct(null);
-      this.store.dispatch(ProductActions.clearCurrentProduct());
+      // this.store.dispatch(ProductPageActions.clearCurrentProduct());
+      this.clearCurrent.emit();
     }
   }
 
@@ -161,20 +140,12 @@ export class ProductEditComponent implements OnInit {
 
       if (product.id === 0) {
         // CREATE
-        // this.productService.createProduct(product).subscribe({
-        //   // next: p => this.productService.changeSelectedProduct(p),
-        //   next: p => this.store.dispatch(ProductActions.setCurrentProduct({ currentProductId: p.id })),
-        //   error: err => this.errorMessage = err
-        // });
-        this.store.dispatch(ProductActions.createProduct({product}));
+        // this.store.dispatch(ProductPageActions.createProduct({ product }));
+        this.create.emit(product);
       } else {
         // UPDATE
-        // this.productService.updateProduct(product).subscribe({
-        //   // next: p => this.productService.changeSelectedProduct(p),
-        //   next: p => this.store.dispatch(ProductActions.setCurrentProduct({ currentProductId: p.id })),
-        //   error: err => this.errorMessage = err
-        // });
-        this.store.dispatch(ProductActions.updateProduct({product}));
+        // this.store.dispatch(ProductPageActions.updateProduct({ product }));
+        this.update.emit(product);
       }
 
     }
